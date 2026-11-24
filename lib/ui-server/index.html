@@ -1,0 +1,2491 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="agy-aio-token" content="{{CSRF_TOKEN}}">
+    <title>agy-aio 控制面板</title>
+    <script>
+      (() => {
+        try {
+          const choice = localStorage.getItem('agy-aio-theme');
+          if (choice === 'light' || choice === 'dark') {
+            document.documentElement.dataset.theme = choice;
+          }
+        } catch {
+          // localStorage 不可用时保持跟随系统。
+        }
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f5f7;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --surface-3: #eef2f7;
+        --border: rgba(15, 23, 42, 0.09);
+        --border-strong: rgba(15, 23, 42, 0.16);
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.09);
+        --accent-border: rgba(37, 99, 235, 0.22);
+        --ok: #16a34a;
+        --ok-soft: rgba(22, 163, 74, 0.1);
+        --ok-border: rgba(22, 163, 74, 0.25);
+        --warn: #d97706;
+        --warn-soft: rgba(217, 119, 6, 0.1);
+        --warn-border: rgba(217, 119, 6, 0.26);
+        --err: #dc2626;
+        --err-soft: rgba(220, 38, 38, 0.09);
+        --err-border: rgba(220, 38, 38, 0.25);
+        --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 30px rgba(15, 23, 42, 0.06);
+        --glow: rgba(37, 99, 235, 0.05);
+        --radius: 16px;
+        --radius-sm: 10px;
+        --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --bg: #0b0e14;
+          --surface: #131823;
+          --surface-2: #1a2130;
+          --surface-3: #202a3d;
+          --border: rgba(148, 163, 184, 0.14);
+          --border-strong: rgba(148, 163, 184, 0.26);
+          --text: #f1f5f9;
+          --text-muted: #94a3b8;
+          --accent: #3b82f6;
+          --accent-soft: rgba(59, 130, 246, 0.14);
+          --accent-border: rgba(59, 130, 246, 0.32);
+          --ok: #22c55e;
+          --ok-soft: rgba(34, 197, 94, 0.14);
+          --ok-border: rgba(34, 197, 94, 0.3);
+          --warn: #f59e0b;
+          --warn-soft: rgba(245, 158, 11, 0.14);
+          --warn-border: rgba(245, 158, 11, 0.3);
+          --err: #ef4444;
+          --err-soft: rgba(239, 68, 68, 0.14);
+          --err-border: rgba(239, 68, 68, 0.3);
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+          --glow: rgba(59, 130, 246, 0.08);
+        }
+      }
+
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0b0e14;
+        --surface: #131823;
+        --surface-2: #1a2130;
+        --surface-3: #202a3d;
+        --border: rgba(148, 163, 184, 0.14);
+        --border-strong: rgba(148, 163, 184, 0.26);
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --accent: #3b82f6;
+        --accent-soft: rgba(59, 130, 246, 0.14);
+        --accent-border: rgba(59, 130, 246, 0.32);
+        --ok: #22c55e;
+        --ok-soft: rgba(34, 197, 94, 0.14);
+        --ok-border: rgba(34, 197, 94, 0.3);
+        --warn: #f59e0b;
+        --warn-soft: rgba(245, 158, 11, 0.14);
+        --warn-border: rgba(245, 158, 11, 0.3);
+        --err: #ef4444;
+        --err-soft: rgba(239, 68, 68, 0.14);
+        --err-border: rgba(239, 68, 68, 0.3);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+        --glow: rgba(59, 130, 246, 0.08);
+      }
+
+      html[data-theme="light"] {
+        color-scheme: light;
+        --bg: #f5f5f7;
+        --surface: #ffffff;
+        --surface-2: #f8fafc;
+        --surface-3: #eef2f7;
+        --border: rgba(15, 23, 42, 0.09);
+        --border-strong: rgba(15, 23, 42, 0.16);
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --accent: #2563eb;
+        --accent-soft: rgba(37, 99, 235, 0.09);
+        --accent-border: rgba(37, 99, 235, 0.22);
+        --ok: #16a34a;
+        --ok-soft: rgba(22, 163, 74, 0.1);
+        --ok-border: rgba(22, 163, 74, 0.25);
+        --warn: #d97706;
+        --warn-soft: rgba(217, 119, 6, 0.1);
+        --warn-border: rgba(217, 119, 6, 0.26);
+        --err: #dc2626;
+        --err-soft: rgba(220, 38, 38, 0.09);
+        --err-border: rgba(220, 38, 38, 0.25);
+        --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 30px rgba(15, 23, 42, 0.06);
+        --glow: rgba(37, 99, 235, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        background-color: var(--bg);
+        background-image: radial-gradient(900px 420px at 50% -8%, var(--glow), transparent 65%);
+        background-repeat: no-repeat;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .app {
+        width: min(980px, 100% - 32px);
+        margin: 0 auto;
+        padding: 24px 0 44px;
+      }
+
+      /* ---------------- 顶栏 ---------------- */
+
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 18px 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        flex: 1 1 360px;
+        min-width: 0;
+      }
+
+      .brandMark {
+        flex: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+      }
+
+      .brandText {
+        min-width: 0;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      /* ---------------- 主题分段控件 ---------------- */
+
+      .seg {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+
+      .seg button {
+        height: 26px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--text-muted);
+        font-family: var(--sans);
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .seg button.active {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+      }
+
+      /* ---------------- 徽章 ---------------- */
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        line-height: 1.5;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        width: fit-content;
+      }
+
+      .badge.ok {
+        color: var(--ok);
+        background: var(--ok-soft);
+        border-color: var(--ok-border);
+      }
+
+      .badge.warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+        border-color: var(--warn-border);
+      }
+
+      .badge.err {
+        color: var(--err);
+        background: var(--err-soft);
+        border-color: var(--err-border);
+      }
+
+      .badge.muted {
+        color: var(--text-muted);
+        background: var(--surface-2);
+        border-color: var(--border);
+      }
+
+      /* ---------------- 警告横幅 ---------------- */
+
+      .banner {
+        margin-top: 14px;
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--err-border);
+        border-left: 3px solid var(--err);
+        background: var(--err-soft);
+        font-size: 13px;
+      }
+
+      .banner strong {
+        display: block;
+        color: var(--err);
+        margin-bottom: 3px;
+        font-size: 13px;
+      }
+
+      .banner p {
+        margin: 0;
+        color: var(--text-muted);
+      }
+
+      /* ---------------- 卡片 ---------------- */
+
+      main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 20px;
+      }
+
+      .cardHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .cardHead h2 {
+        margin: 0;
+        font-size: 14.5px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .hint {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .subhead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 2px 0 8px;
+      }
+
+      .subhead h3 {
+        margin: 0;
+        font-size: 12.5px;
+        font-weight: 650;
+        color: var(--text);
+      }
+
+      /* ---------------- 表单 ---------------- */
+
+      .proxyTop {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr) 240px;
+        gap: 12px;
+      }
+
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+        min-width: 0;
+      }
+
+      .field > span {
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        font-family: inherit;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      input[type="text"]:hover,
+      input[type="number"]:hover,
+      select:hover,
+      textarea:hover {
+        border-color: var(--border-strong);
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+
+      input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        margin: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+
+      .inlineCheck {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--surface);
+        font-size: 12.5px;
+        color: var(--text);
+        cursor: pointer;
+        min-width: 0;
+      }
+
+      .inlineCheck span {
+        overflow-wrap: anywhere;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .row.end {
+        justify-content: flex-end;
+        margin-top: 8px;
+      }
+
+      /* ---------------- 按钮 ---------------- */
+
+      .btn {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 34px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, transform 0.05s ease;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: var(--surface-2);
+        border-color: var(--border-strong);
+      }
+
+      .btn:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        border-color: transparent;
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+      }
+
+      .btn.primary:hover:not(:disabled) {
+        filter: brightness(1.06);
+        border-color: transparent;
+      }
+
+      .btn.secondary {
+        background: var(--surface);
+      }
+
+      .btn.ghost {
+        background: transparent;
+        color: var(--text-muted);
+      }
+
+      .btn.ghost:hover:not(:disabled) {
+        color: var(--text);
+      }
+
+      .btn.danger {
+        color: var(--err);
+        background: var(--err-soft);
+        border-color: var(--err-border);
+      }
+
+      .btn.danger:hover:not(:disabled) {
+        background: var(--err-soft);
+        border-color: var(--err);
+      }
+
+      .btn.sm {
+        height: 28px;
+        padding: 0 10px;
+        font-size: 11.5px;
+      }
+
+      .ctaRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .note {
+        margin: 12px 0 0;
+        padding: 10px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--accent-border);
+        background: var(--accent-soft);
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      /* ---------------- 高级折叠区 ---------------- */
+
+      details.adv {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface-2);
+      }
+
+      details.adv > summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 14px;
+        cursor: pointer;
+        list-style: none;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        user-select: none;
+      }
+
+      details.adv > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.adv > summary::before {
+        content: "";
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(-45deg);
+        transition: transform 0.15s ease;
+      }
+
+      details.adv[open] > summary::before {
+        transform: rotate(45deg);
+      }
+
+      details.adv[open] > summary {
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+      }
+
+      .advBody {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 14px;
+      }
+
+      /* ---------------- 分流规则表 ---------------- */
+
+      .tableWrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+      }
+
+      table.rules {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 780px;
+      }
+
+      table.rules th,
+      table.rules td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      table.rules th {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: var(--surface-2);
+        white-space: nowrap;
+      }
+
+      table.rules tr:last-child td {
+        border-bottom: none;
+      }
+
+      table.rules td:nth-child(1) {
+        width: 52px;
+        text-align: center;
+      }
+
+      table.rules td:nth-child(2) {
+        width: 92px;
+      }
+
+      table.rules td:nth-child(3) {
+        width: 140px;
+      }
+
+      table.rules td:nth-child(6) {
+        width: 64px;
+      }
+
+      table.rules input[type="text"],
+      table.rules select {
+        padding: 6px 8px;
+        font-size: 12.5px;
+      }
+
+      /* ---------------- 原始 JSON ---------------- */
+
+      details.raw {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+      }
+
+      details.raw > summary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        list-style: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        user-select: none;
+      }
+
+      details.raw > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.raw > summary::before {
+        content: "";
+        flex: none;
+        width: 5px;
+        height: 5px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(-45deg);
+        transition: transform 0.15s ease;
+      }
+
+      details.raw[open] > summary::before {
+        transform: rotate(45deg);
+      }
+
+      details.raw textarea {
+        width: calc(100% - 24px);
+        margin: 0 12px;
+        min-height: 220px;
+        resize: vertical;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      details.raw .rawFoot {
+        display: flex;
+        justify-content: flex-end;
+        padding: 10px 12px 12px;
+      }
+
+      /* ---------------- 组件三栏 ---------------- */
+
+      .modules {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .module {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        min-width: 0;
+      }
+
+      .moduleHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .module h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .kv {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 6px 10px;
+        margin: 0;
+        font-size: 12px;
+      }
+
+      .kv dt {
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .kv dd {
+        margin: 0;
+        text-align: right;
+        overflow-wrap: anywhere;
+      }
+
+      .kv dd.path {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--text-muted);
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .targetsWrap {
+        border-top: 1px solid var(--border);
+        padding-top: 8px;
+      }
+
+      .targetsWrap > summary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        list-style: none;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--text-muted);
+        user-select: none;
+      }
+
+      .targetsWrap > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .targetsWrap > summary::before {
+        content: "";
+        flex: none;
+        width: 5px;
+        height: 5px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(-45deg);
+        transition: transform 0.15s ease;
+      }
+
+      .targetsWrap[open] > summary::before {
+        transform: rotate(45deg);
+      }
+
+      .targets {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .target {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 9px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .targetHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .targetName {
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .targetPath {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        word-break: break-all;
+      }
+
+      .targetMeta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      /* ---------------- 一键维护操作栏 ---------------- */
+
+      .actionBar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .checks label {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions .push {
+        margin-left: auto;
+      }
+
+      /* ---------------- 测试结果 / 更新 ---------------- */
+
+      .results {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .resultPill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface-2);
+        font-size: 11.5px;
+        color: var(--text-muted);
+      }
+
+      .resultPill .mono {
+        font-size: 11px;
+        color: var(--text);
+      }
+
+      .dot {
+        flex: none;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-muted);
+      }
+
+      .dot.ok {
+        background: var(--ok);
+        box-shadow: 0 0 0 3px var(--ok-soft);
+      }
+
+      .dot.err {
+        background: var(--err);
+        box-shadow: 0 0 0 3px var(--err-soft);
+      }
+
+      .dot.warn {
+        background: var(--warn);
+        box-shadow: 0 0 0 3px var(--warn-soft);
+      }
+
+      details.updatesCard {
+        margin-top: 14px;
+      }
+
+      details.updatesCard > summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        cursor: pointer;
+        list-style: none;
+        font-size: 13.5px;
+        font-weight: 650;
+        user-select: none;
+      }
+
+      details.updatesCard > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.updatesCard[open] > summary {
+        margin-bottom: 14px;
+      }
+
+      details.updatesCard .updatesAt {
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      .updates {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+
+      .updateRow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        font-size: 12.5px;
+      }
+
+      .updateRow > span:first-child {
+        min-width: 150px;
+        color: var(--text-muted);
+      }
+
+      .mono {
+        font-family: var(--mono);
+        color: var(--text);
+      }
+
+      .mutedText {
+        color: var(--text-muted);
+      }
+
+      /* ---------------- 日志 ---------------- */
+
+      .log {
+        margin: 0;
+        height: 220px;
+        overflow: auto;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface-2);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* ---------------- 提示条 ---------------- */
+
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 50;
+        max-width: min(420px, calc(100vw - 40px));
+        padding: 11px 15px;
+        border-radius: 10px;
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12.5px;
+        box-shadow: var(--shadow);
+      }
+
+      .toast.ok {
+        border-color: var(--ok-border);
+        color: var(--ok);
+      }
+
+      .toast.warn {
+        border-color: var(--warn-border);
+        color: var(--warn);
+      }
+
+      .toast.err {
+        border-color: var(--err-border);
+        color: var(--err);
+      }
+
+      .foot {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 11.5px;
+        color: var(--text-muted);
+      }
+
+      body.busy .card {
+        cursor: progress;
+      }
+
+      body.shutdown .card {
+        opacity: 0.6;
+      }
+
+      @media (max-width: 860px) {
+        .modules {
+          grid-template-columns: 1fr;
+        }
+
+        .proxyTop {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .app {
+          width: calc(100% - 24px);
+          padding-top: 16px;
+        }
+
+        .topbar {
+          padding: 16px;
+        }
+
+        .toolbar {
+          width: 100%;
+          margin-left: 0;
+        }
+
+        .card {
+          padding: 16px;
+        }
+
+        .proxyTop,
+        .grid3,
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar .btn,
+        .actions .btn {
+          flex: 1 1 auto;
+        }
+
+        .actions .push {
+          margin-left: 0;
+        }
+
+        .kv {
+          grid-template-columns: 1fr;
+          gap: 2px;
+        }
+
+        .kv dt {
+          margin-top: 6px;
+        }
+
+        .kv dd {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brandMark">AG</div>
+          <div class="brandText">
+            <h1>agy-aio 控制面板</h1>
+            <div class="pills">
+              <span class="pill" id="chipPlatform">—</span>
+              <span class="pill" id="chipDesktop">客户端 —</span>
+              <span class="badge muted" id="chipRunning">检测中…</span>
+              <span class="badge muted" id="chipL10n">汉化版本 —</span>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="主题模式">
+            <button type="button" data-theme-choice="system" aria-pressed="true">跟随系统</button>
+            <button type="button" data-theme-choice="light" aria-pressed="false">浅色</button>
+            <button type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+          </div>
+          <button class="btn ghost" id="btnRefresh" type="button">刷新</button>
+          <button class="btn ghost" id="btnUpdates" type="button">检查更新</button>
+          <button class="btn danger" id="btnShutdown" type="button">关闭面板</button>
+        </div>
+      </header>
+
+      <div class="banner" id="versionBanner" role="alert" hidden>
+        <strong>汉化版本不匹配 · 白屏风险</strong>
+        <p id="versionBannerText"></p>
+      </div>
+
+      <details class="card updatesCard" id="updatesCard" hidden>
+        <summary>
+          <span>上游最新版本</span>
+          <span class="updatesAt" id="updatesAt"></span>
+        </summary>
+        <div class="updates" id="updatesBody"></div>
+      </details>
+
+      <main>
+        <section class="card" id="proxyCard">
+          <div class="cardHead">
+            <div>
+              <h2>代理设置</h2>
+              <p class="hint">保存后自动同步到 Desktop / IDE / CLI 的客户端目录，无需手改 config.json。</p>
+            </div>
+            <span class="badge muted" id="proxyEndpointBadge">—</span>
+          </div>
+
+          <div class="proxyTop">
+            <label class="field">
+              <span>代理协议</span>
+              <select id="proxyType">
+                <option value="socks5">SOCKS5</option>
+                <option value="http">HTTP</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>代理地址</span>
+              <input id="proxyHost" type="text" placeholder="127.0.0.1" autocomplete="off" spellcheck="false" />
+            </label>
+            <div class="field">
+              <span>代理端口（7890 / 7897）</span>
+              <div class="row">
+                <input id="proxyPort" type="number" min="1" max="65535" placeholder="7890" aria-label="代理端口" />
+                <button class="btn secondary" id="btnDetect" type="button">自动探测</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ctaRow">
+            <button class="btn primary" id="btnSaveProxy" type="button">保存并同步</button>
+            <button class="btn secondary" id="btnTestProxy" type="button">测试连通性</button>
+          </div>
+
+          <p class="note">只改代理端口时，下方高级网络与分流规则全部保持默认即可，无需改动。</p>
+
+          <div class="results" id="testResults" hidden></div>
+
+          <details class="adv">
+            <summary>高级代理与分流设置（一般无需修改）</summary>
+            <div class="advBody">
+              <div class="grid3">
+                <label class="inlineCheck">
+                  <input type="checkbox" id="fakeIpEnabled" />
+                  <span>启用 FakeIP</span>
+                </label>
+                <label class="field">
+                  <span>FakeIP CIDR</span>
+                  <input id="fakeIpCidr" type="text" placeholder="198.18.0.0/15" spellcheck="false" />
+                </label>
+                <label class="inlineCheck">
+                  <input type="checkbox" id="childInjection" />
+                  <span>子进程注入（child_injection）</span>
+                </label>
+              </div>
+
+              <div class="grid3">
+                <label class="field">
+                  <span>连接超时 connect_ms</span>
+                  <input id="timeoutConnect" type="number" min="1" placeholder="5000" />
+                </label>
+                <label class="field">
+                  <span>发送超时 send_ms</span>
+                  <input id="timeoutSend" type="number" min="1" placeholder="5000" />
+                </label>
+                <label class="field">
+                  <span>接收超时 recv_ms</span>
+                  <input id="timeoutRecv" type="number" min="1" placeholder="5000" />
+                </label>
+              </div>
+
+              <div class="subhead">
+                <h3>分流规则（proxy_rules.routing.rules）</h3>
+                <button class="btn ghost sm" id="btnAddRule" type="button">添加规则</button>
+              </div>
+
+              <div class="tableWrap">
+                <table class="rules">
+                  <thead>
+                    <tr>
+                      <th>启用</th>
+                      <th>动作</th>
+                      <th>名称</th>
+                      <th>域名（逗号分隔）</th>
+                      <th>IPv4 CIDR（逗号分隔）</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="rulesBody"></tbody>
+                </table>
+              </div>
+
+              <div class="grid2">
+                <label class="field">
+                  <span>允许端口 allowed_ports</span>
+                  <input id="allowedPorts" type="text" placeholder="80, 443" spellcheck="false" />
+                </label>
+                <label class="field">
+                  <span>默认动作 default_action</span>
+                  <select id="defaultAction">
+                    <option value="proxy">proxy</option>
+                    <option value="direct">direct</option>
+                  </select>
+                </label>
+              </div>
+
+              <details class="raw">
+                <summary>原始 JSON 预览 / 覆盖编辑</summary>
+                <textarea id="rawConfig" spellcheck="false" aria-label="原始配置 JSON"></textarea>
+                <div class="rawFoot">
+                  <button class="btn ghost sm" id="btnApplyJson" type="button">应用 JSON</button>
+                </div>
+              </details>
+            </div>
+          </details>
+        </section>
+
+        <section class="card" id="modulesCard">
+          <div class="cardHead">
+            <div>
+              <h2>三合一组件状态与一键维护</h2>
+              <p class="hint">安装顺序：中文汉化 → 透明代理 → agy-capsule；macOS 会自动统一重签。</p>
+            </div>
+          </div>
+
+          <div class="modules">
+            <article class="module">
+              <div class="moduleHead">
+                <h3>胶囊插件（agy-capsule）</h3>
+                <span class="badge muted" id="capsuleBadge">—</span>
+              </div>
+              <dl class="kv">
+                <dt>已安装版本</dt>
+                <dd id="capsuleInstalled">—</dd>
+                <dt>内置版本</dt>
+                <dd id="capsuleBundled">—</dd>
+                <dt>CDP 模式</dt>
+                <dd><span class="badge muted" id="capsuleCdp">—</span></dd>
+                <dt>插件目录</dt>
+                <dd class="path" id="capsuleDir">—</dd>
+              </dl>
+              <label class="field">
+                <span>CDP 启动模式</span>
+                <select id="cdpMode">
+                  <option value="native">免壳原版 App（推荐 · 直接点原图标）</option>
+                  <option value="wrapper">独立启动器（Antigravity-CDP.app）</option>
+                  <option value="none">关闭底栏胶囊（仅用侧栏）</option>
+                </select>
+              </label>
+            </article>
+
+            <article class="module">
+              <div class="moduleHead">
+                <h3>中文汉化</h3>
+                <span class="badge muted" id="l10nBadge">—</span>
+              </div>
+              <dl class="kv">
+                <dt>客户端版本</dt>
+                <dd id="l10nClient">—</dd>
+                <dt>补丁版本</dt>
+                <dd id="l10nBundled">—</dd>
+                <dt>版本匹配</dt>
+                <dd><span class="badge muted" id="l10nMatch">—</span></dd>
+                <dt>汉化状态</dt>
+                <dd id="l10nLocalized">—</dd>
+                <dt>官方备份</dt>
+                <dd id="l10nBackup">—</dd>
+              </dl>
+              <div class="stack">
+                <label class="field">
+                  <span>汉化模式</span>
+                  <select id="l10nMode">
+                    <option value="auto">auto（在线优先，失败后本地构建）</option>
+                    <option value="online">online（仅在线补丁）</option>
+                    <option value="local">local（仅本地构建）</option>
+                  </select>
+                </label>
+                <label class="inlineCheck">
+                  <input type="checkbox" id="allowMismatch" />
+                  <span>允许版本不匹配时强制构建</span>
+                </label>
+              </div>
+            </article>
+
+            <article class="module">
+              <div class="moduleHead">
+                <h3>透明代理</h3>
+                <span class="badge muted" id="proxyStatusBadge">—</span>
+              </div>
+              <dl class="kv">
+                <dt>代理端点</dt>
+                <dd id="proxyEndpoint">—</dd>
+                <dt>端口状态</dt>
+                <dd id="proxyPortState">—</dd>
+                <dt>构建 / 缓存</dt>
+                <dd id="proxyArtifacts">—</dd>
+              </dl>
+              <details class="targetsWrap">
+                <summary id="targetsSummary">注入目标</summary>
+                <div class="targets" id="proxyTargets"></div>
+              </details>
+            </article>
+          </div>
+
+          <div class="actionBar">
+            <div class="checks">
+              <label><input type="checkbox" class="moduleCheck" value="localization" checked /> 中文汉化</label>
+              <label><input type="checkbox" class="moduleCheck" value="proxy" checked /> 透明代理</label>
+              <label><input type="checkbox" class="moduleCheck" value="capsule" checked /> agy-capsule</label>
+            </div>
+            <div class="actions">
+              <button class="btn secondary actionBtn" data-action="dry-run" type="button">演练预览 (Dry-Run)</button>
+              <button class="btn primary actionBtn" data-action="install" type="button">一键安装</button>
+              <button class="btn secondary actionBtn" data-action="restore" type="button">更新后恢复</button>
+              <button class="btn danger actionBtn" data-action="uninstall" type="button">一键卸载</button>
+              <button class="btn ghost push" id="btnLaunch" type="button">启动 Antigravity</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="logCard">
+          <div class="cardHead">
+            <div>
+              <h2>操作日志</h2>
+              <p class="hint">日志与终端输出一致，已去除 ANSI 颜色码。</p>
+            </div>
+            <button class="btn ghost sm" id="btnClearLog" type="button">清空</button>
+          </div>
+          <pre class="log" id="logView" data-empty="1">等待操作…</pre>
+        </section>
+      </main>
+
+      <p class="foot">
+        控制面板仅监听 127.0.0.1，页面内嵌一次性安全令牌；关闭页面不会停止后台任务。
+      </p>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script>
+      (() => {
+        'use strict';
+
+        const TOKEN =
+          (document.querySelector('meta[name="agy-aio-token"]') || {}).content || '';
+        const THEME_KEY = 'agy-aio-theme';
+        const state = {
+          status: null,
+          config: null,
+          updates: null,
+          busy: false,
+          closed: false,
+          cdpModeTouched: false
+        };
+
+        const $ = id => document.getElementById(id);
+
+        const BUSY_SELECTORS = [
+          '#btnSaveProxy',
+          '#btnTestProxy',
+          '#btnDetect',
+          '#btnLaunch',
+          '#btnUpdates',
+          '#btnRefresh',
+          '.actionBtn'
+        ];
+
+        const CODESIGN_LABELS = {
+          google: 'Google 官方签名',
+          adhoc: 'ad-hoc 签名',
+          unsigned: '未签名',
+          missing: '文件缺失',
+          unknown: '未知',
+          'not-applicable': '不适用'
+        };
+
+        const CDP_MODE_LABELS = {
+          native: '原生（免壳）',
+          wrapper: '独立启动器',
+          none: '未配置'
+        };
+
+        /* ----------------------------- 基础工具 ----------------------------- */
+
+        async function api(pathname, options = {}) {
+          const method = options.method || 'GET';
+          const init = { method, headers: {} };
+          if (method !== 'GET' && method !== 'HEAD') {
+            init.headers['Content-Type'] = 'application/json';
+            init.headers['x-agy-aio-token'] = TOKEN;
+            init.body = JSON.stringify(options.body === undefined ? {} : options.body);
+          }
+
+          const response = await fetch(pathname, init);
+          const text = await response.text();
+          let data = null;
+          if (text) {
+            try {
+              data = JSON.parse(text);
+            } catch {
+              data = null;
+            }
+          }
+
+          if (!response.ok) {
+            const error = new Error(
+              (data && data.error) || `请求失败（HTTP ${response.status}）`
+            );
+            if (data && Array.isArray(data.logs)) error.logs = data.logs;
+            throw error;
+          }
+          return data || {};
+        }
+
+        function setText(id, value) {
+          const el = $(id);
+          if (!el) return;
+          el.textContent = value === undefined || value === null || value === '' ? '—' : String(value);
+        }
+
+        function setBadge(id, tone, text) {
+          const el = $(id);
+          if (!el) return;
+          el.className = `badge ${tone}`;
+          el.textContent = text;
+        }
+
+        function makeBadge(tone, text) {
+          const span = document.createElement('span');
+          span.className = `badge ${tone}`;
+          span.textContent = text;
+          return span;
+        }
+
+        function codesignLabel(value) {
+          return CODESIGN_LABELS[value] || String(value || '未知');
+        }
+
+        function codesignTone(value) {
+          if (value === 'google' || value === 'adhoc') return 'ok';
+          if (value === 'not-applicable') return 'muted';
+          return 'warn';
+        }
+
+        function splitList(value) {
+          return String(value || '')
+            .split(',')
+            .map(item => item.trim())
+            .filter(Boolean);
+        }
+
+        function isPlainObject(value) {
+          return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+        }
+
+        function osLabel(os) {
+          if (os === 'darwin') return 'macOS';
+          if (os === 'win32') return 'Windows';
+          if (os === 'linux') return 'Linux';
+          return os || '未知';
+        }
+
+        let toastTimer = null;
+        function toast(message, tone = 'info') {
+          const el = $('toast');
+          el.textContent = message;
+          el.className = `toast ${tone}`;
+          el.hidden = false;
+          if (toastTimer) window.clearTimeout(toastTimer);
+          toastTimer = window.setTimeout(() => {
+            el.hidden = true;
+          }, 4500);
+        }
+
+        function appendLog(lines) {
+          const list = (Array.isArray(lines) ? lines : [lines])
+            .filter(line => line !== undefined && line !== null && String(line) !== '')
+            .map(line => String(line));
+          if (list.length === 0) return;
+
+          const view = $('logView');
+          const stamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+          const block = list.map(line => `[${stamp}] ${line}`).join('\n');
+
+          if (view.dataset.empty === '1') {
+            view.textContent = block;
+            view.dataset.empty = '0';
+          } else {
+            view.textContent += `\n${block}`;
+          }
+          view.scrollTop = view.scrollHeight;
+        }
+
+        function setBusy(busy) {
+          state.busy = busy;
+          document.querySelectorAll(BUSY_SELECTORS.join(',')).forEach(el => {
+            el.disabled = busy || state.closed;
+          });
+          document.body.classList.toggle('busy', busy);
+        }
+
+        async function withBusy(task) {
+          if (state.busy || state.closed) return;
+          setBusy(true);
+          try {
+            await task();
+          } catch (error) {
+            const message = error && error.message ? error.message : String(error);
+            toast(message, 'err');
+            appendLog([`错误：${message}`]);
+            if (error && Array.isArray(error.logs) && error.logs.length) appendLog(error.logs);
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        /* ----------------------------- 主题切换 ----------------------------- */
+
+        function readThemeChoice() {
+          try {
+            const value = localStorage.getItem(THEME_KEY);
+            if (value === 'light' || value === 'dark') return value;
+          } catch {
+            // localStorage 不可用时按跟随系统处理。
+          }
+          return 'system';
+        }
+
+        function applyTheme(choice) {
+          const root = document.documentElement;
+          if (choice === 'light' || choice === 'dark') {
+            root.dataset.theme = choice;
+          } else {
+            delete root.dataset.theme;
+          }
+          document.querySelectorAll('[data-theme-choice]').forEach(button => {
+            const active = button.dataset.themeChoice === choice;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+        }
+
+        function setThemeChoice(choice) {
+          const next = choice === 'light' || choice === 'dark' ? choice : 'system';
+          try {
+            if (next === 'system') localStorage.removeItem(THEME_KEY);
+            else localStorage.setItem(THEME_KEY, next);
+          } catch {
+            // 仅影响记忆功能。
+          }
+          applyTheme(next);
+        }
+
+        /* ----------------------------- 顶栏与状态 ----------------------------- */
+
+        function renderTopbar(status) {
+          const platform = status.platform || {};
+          const l10n = status.localization || {};
+
+          setText('chipPlatform', `${osLabel(platform.os)} · ${platform.arch || '未知'}`);
+
+          const clientVersion = String(l10n.clientVersion || '').replace(/^v/i, '');
+          setText('chipDesktop', clientVersion ? `客户端 v${clientVersion}` : '客户端 —');
+
+          const running = $('chipRunning');
+          running.textContent = status.running ? 'Antigravity 运行中' : 'Antigravity 未运行';
+          running.className = `badge ${status.running ? 'ok' : 'muted'}`;
+
+          const chip = $('chipL10n');
+          if (l10n.versionMatch === 'match') {
+            chip.textContent = `汉化版本匹配 ${l10n.clientVersion || ''}`.trim();
+            chip.className = 'badge ok';
+          } else if (l10n.versionMatch === 'mismatch') {
+            chip.textContent = '汉化版本不匹配';
+            chip.className = 'badge err';
+          } else {
+            chip.textContent = '汉化版本未知';
+            chip.className = 'badge warn';
+          }
+
+          const banner = $('versionBanner');
+          if (l10n.versionMatch === 'mismatch') {
+            banner.hidden = false;
+            $('versionBannerText').textContent =
+              (l10n.compatibilityMessage || '客户端与汉化补丁版本不一致。') +
+              ' 强行覆盖 app.asar 可能导致 Antigravity 白屏；建议先「检查更新」等待匹配补丁，或勾选「允许版本不匹配时强制构建」后再操作。';
+          } else {
+            banner.hidden = true;
+          }
+        }
+
+        function selectedCdpMode() {
+          const el = $('cdpMode');
+          if (!el) return undefined;
+          return el.value === 'native' || el.value === 'wrapper' || el.value === 'none'
+            ? el.value
+            : undefined;
+        }
+
+        function renderModules(status) {
+          const capsule = status.capsule || {};
+          const l10n = status.localization || {};
+          const proxy = status.proxy || {};
+          const platform = status.platform || {};
+
+          if (capsule.error) {
+            setBadge('capsuleBadge', 'err', '读取失败');
+            setText('capsuleInstalled', '—');
+            setText('capsuleBundled', '—');
+            setBadge('capsuleCdp', 'err', '读取失败');
+            setText('capsuleDir', '—');
+          } else {
+            setBadge(
+              'capsuleBadge',
+              capsule.installed ? 'ok' : 'warn',
+              capsule.installed ? '已安装' : '未安装'
+            );
+            setText(
+              'capsuleInstalled',
+              capsule.installedVersion || (capsule.installed ? '未知' : '未安装')
+            );
+            setText('capsuleBundled', capsule.bundledVersion || '—');
+
+            const cdp = isPlainObject(capsule.cdp) ? capsule.cdp : {};
+            const detected =
+              cdp.mode === 'native' || cdp.mode === 'wrapper' ? cdp.mode : 'none';
+            setBadge(
+              'capsuleCdp',
+              detected === 'none' ? 'muted' : 'ok',
+              CDP_MODE_LABELS[detected] || '未配置'
+            );
+
+            if (!state.cdpModeTouched) {
+              const select = $('cdpMode');
+              if (select) {
+                select.value =
+                  detected === 'none'
+                    ? platform.os === 'darwin'
+                      ? 'native'
+                      : 'wrapper'
+                    : detected;
+              }
+            }
+
+            setText('capsuleDir', capsule.pluginDir || '—');
+          }
+
+          if (l10n.error) {
+            setBadge('l10nBadge', 'err', '读取失败');
+            setText('l10nClient', '—');
+            setText('l10nBundled', '—');
+            setBadge('l10nMatch', 'err', '读取失败');
+            setText('l10nLocalized', '—');
+            setText('l10nBackup', '—');
+          } else {
+            const found = l10n.found !== false;
+            setBadge(
+              'l10nBadge',
+              l10n.localized ? 'ok' : found ? 'warn' : 'muted',
+              l10n.localized ? '已汉化' : found ? '未汉化' : '未检测'
+            );
+            setText('l10nClient', l10n.clientVersion || '未知');
+            setText('l10nBundled', l10n.bundledVersion || '未知');
+
+            const match = l10n.versionMatch;
+            if (match === 'match') setBadge('l10nMatch', 'ok', '匹配');
+            else if (match === 'mismatch') setBadge('l10nMatch', 'err', '不匹配（白屏风险）');
+            else setBadge('l10nMatch', 'warn', '未知');
+
+            setText('l10nLocalized', l10n.localized ? '已汉化' : '未汉化');
+            setText(
+              'l10nBackup',
+              l10n.hasValidBackup
+                ? `有效（${l10n.backupVersion || '版本未知'}）`
+                : l10n.backupExists
+                  ? '存在但版本不匹配'
+                  : '未找到'
+            );
+          }
+
+          if (proxy.error) {
+            setBadge('proxyStatusBadge', 'err', '读取失败');
+            setBadge('proxyEndpointBadge', 'err', '读取失败');
+            setText('proxyEndpoint', '—');
+            setText('proxyPortState', '—');
+            setText('proxyArtifacts', '—');
+          } else {
+            const endpoint = proxy.proxy || {};
+            const endpointText =
+              endpoint.host && endpoint.port
+                ? `${endpoint.host}:${endpoint.port} (${endpoint.type || '未知'})`
+                : '未配置';
+            setText('proxyEndpoint', endpointText);
+            setText('proxyPortState', proxy.portOpen ? '可连通' : '无法连接');
+            setText('proxyArtifacts', proxy.artifactsReady ? '就绪' : '缺失');
+
+            const patched = (Array.isArray(proxy.targets) ? proxy.targets : []).filter(
+              target => target && target.patched
+            ).length;
+            setBadge(
+              'proxyStatusBadge',
+              patched > 0 ? 'ok' : 'warn',
+              patched > 0 ? `已注入 ${patched} 个目标` : '未注入'
+            );
+            setBadge('proxyEndpointBadge', proxy.portOpen ? 'ok' : 'muted', endpointText);
+          }
+
+          renderTargets(proxy);
+        }
+
+        function renderTargets(proxy) {
+          const box = $('proxyTargets');
+          box.textContent = '';
+
+          const targets = Array.isArray(proxy.targets) ? proxy.targets : [];
+          const summary = $('targetsSummary');
+          if (summary) summary.textContent = `注入目标（${targets.length}）`;
+
+          if (targets.length === 0) {
+            const note = document.createElement('p');
+            note.className = 'hint';
+            note.textContent = proxy.error ? '代理状态读取失败。' : '未发现可注入的目标。';
+            box.appendChild(note);
+            return;
+          }
+
+          for (const target of targets) {
+            const card = document.createElement('div');
+            card.className = 'target';
+
+            const head = document.createElement('div');
+            head.className = 'targetHead';
+            const title = document.createElement('span');
+            title.className = 'targetName';
+            title.textContent = target.name || target.kind || '目标';
+            head.appendChild(title);
+            head.appendChild(
+              makeBadge(target.patched ? 'ok' : 'warn', target.patched ? '已注入' : '未注入')
+            );
+
+            const targetPath = document.createElement('div');
+            targetPath.className = 'targetPath';
+            targetPath.textContent = target.targetPath || target.targetDir || '';
+
+            card.append(head, targetPath);
+
+            const meta = document.createElement('div');
+            meta.className = 'targetMeta';
+
+            if (target.codesign) {
+              meta.appendChild(
+                makeBadge(codesignTone(target.codesign), codesignLabel(target.codesign))
+              );
+            }
+            if (target.kind === 'cli' && 'dbghelpDllExists' in target) {
+              meta.appendChild(
+                makeBadge(
+                  target.dbghelpDllExists && target.proxyDllExists ? 'ok' : 'warn',
+                  'CLI 代理 DLL'
+                )
+              );
+            }
+            if (target.kind !== 'cli' && 'versionDllExists' in target) {
+              meta.appendChild(
+                makeBadge(target.versionDllExists ? 'ok' : 'warn', 'version.dll')
+              );
+            }
+            if (target.configJsonExists !== undefined) {
+              meta.appendChild(
+                makeBadge(
+                  target.configJsonExists ? 'ok' : 'warn',
+                  target.configJsonExists ? '配置已同步' : '配置未同步'
+                )
+              );
+            }
+            if (target.origExists !== undefined) {
+              meta.appendChild(
+                makeBadge(target.origExists ? 'ok' : 'warn', target.origExists ? '原文件已备份' : '无备份')
+              );
+            }
+
+            if (meta.childNodes.length > 0) card.appendChild(meta);
+            box.appendChild(card);
+          }
+        }
+
+        function renderUpdates(updates, clientVersion) {
+          const card = $('updatesCard');
+          card.hidden = false;
+          card.open = true;
+          if (state.status) renderTopbar(state.status);
+
+          $('updatesAt').textContent = clientVersion ? `客户端版本 v${String(clientVersion).replace(/^v/i, '')}` : '';
+
+          const body = $('updatesBody');
+          body.textContent = '';
+
+          const groups = [
+            ['agy-capsule', updates.capsule],
+            ['中文汉化', updates.localization],
+            ['透明代理（Windows 资产）', updates.proxy]
+          ];
+
+          for (const [label, info] of groups) {
+            const row = document.createElement('div');
+            row.className = 'updateRow';
+
+            const name = document.createElement('span');
+            name.textContent = label;
+
+            const tag = document.createElement('span');
+            tag.className = 'mono';
+            tag.textContent = info && info.tag ? info.tag : '检查失败';
+
+            row.append(name, tag);
+
+            if (info && info.match) {
+              row.appendChild(
+                makeBadge(
+                  info.match === 'match' ? 'ok' : 'err',
+                  info.match === 'match' ? '与客户端匹配' : '与客户端不匹配'
+                )
+              );
+            } else if (info && info.error) {
+              row.appendChild(makeBadge('warn', '查询失败'));
+            }
+
+            body.appendChild(row);
+          }
+
+          const upstream = updates.localization && updates.localization.tag;
+          if (upstream) {
+            const chip = $('chipL10n');
+            chip.textContent = `${chip.textContent} · 上游 ${upstream}`;
+          }
+        }
+
+        async function refreshStatus(options = {}) {
+          const reloadForm = options.reloadForm === true;
+          const data = await api('/api/status');
+          state.status = data;
+
+          if (data.config) {
+            state.config = data.config;
+            if (reloadForm) renderProxyForm(data.config);
+          }
+
+          renderTopbar(data);
+          renderModules(data);
+          if (state.updates) renderUpdates(state.updates, (data.localization || {}).clientVersion);
+        }
+
+        /* ----------------------------- 代理表单 ----------------------------- */
+
+        function createRuleRow(rule) {
+          const source = rule || {};
+          const tr = document.createElement('tr');
+
+          const enabledCell = document.createElement('td');
+          const enabled = document.createElement('input');
+          enabled.type = 'checkbox';
+          enabled.className = 'rule-enabled';
+          enabled.checked = source.enabled !== false;
+          enabledCell.appendChild(enabled);
+
+          const actionCell = document.createElement('td');
+          const action = document.createElement('select');
+          action.className = 'rule-action';
+          for (const value of ['direct', 'proxy']) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            action.appendChild(option);
+          }
+          action.value = source.action === 'direct' ? 'direct' : 'proxy';
+          actionCell.appendChild(action);
+
+          const nameCell = document.createElement('td');
+          const name = document.createElement('input');
+          name.type = 'text';
+          name.className = 'rule-name';
+          name.value = source.name || '';
+          name.spellcheck = false;
+          nameCell.appendChild(name);
+
+          const domainsCell = document.createElement('td');
+          const domains = document.createElement('input');
+          domains.type = 'text';
+          domains.className = 'rule-domains';
+          domains.value = Array.isArray(source.domains) ? source.domains.join(', ') : source.domains || '';
+          domains.spellcheck = false;
+          domainsCell.appendChild(domains);
+
+          const cidrsCell = document.createElement('td');
+          const cidrs = document.createElement('input');
+          cidrs.type = 'text';
+          cidrs.className = 'rule-cidrs';
+          cidrs.value = Array.isArray(source.ip_cidrs_v4)
+            ? source.ip_cidrs_v4.join(', ')
+            : source.ip_cidrs_v4 || '';
+          cidrs.spellcheck = false;
+          cidrsCell.appendChild(cidrs);
+
+          const delCell = document.createElement('td');
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'btn sm danger';
+          del.textContent = '删除';
+          del.addEventListener('click', () => {
+            tr.remove();
+            syncRawFromForm();
+          });
+          delCell.appendChild(del);
+
+          for (const input of [enabled, name, domains, cidrs]) {
+            input.addEventListener('input', syncRawFromForm);
+            input.addEventListener('change', syncRawFromForm);
+          }
+          action.addEventListener('change', syncRawFromForm);
+
+          tr.append(enabledCell, actionCell, nameCell, domainsCell, cidrsCell, delCell);
+          return tr;
+        }
+
+        function renderRules(proxyRules) {
+          const body = $('rulesBody');
+          body.textContent = '';
+          const routing = isPlainObject(proxyRules) && isPlainObject(proxyRules.routing) ? proxyRules.routing : {};
+          const rules = Array.isArray(routing.rules) ? routing.rules : [];
+          for (const rule of rules) body.appendChild(createRuleRow(rule));
+        }
+
+        function currentRules() {
+          return [...document.querySelectorAll('#rulesBody tr')].map(tr => {
+            const nameInput = tr.querySelector('.rule-name');
+            const actionInput = tr.querySelector('.rule-action');
+            const enabledInput = tr.querySelector('.rule-enabled');
+            const domainsInput = tr.querySelector('.rule-domains');
+            const cidrsInput = tr.querySelector('.rule-cidrs');
+
+            const rawName = nameInput ? nameInput.value.trim() : '';
+            return {
+              name: rawName || '未命名规则',
+              enabled: enabledInput ? enabledInput.checked : true,
+              action: actionInput && actionInput.value === 'direct' ? 'direct' : 'proxy',
+              domains: splitList(domainsInput ? domainsInput.value : ''),
+              ip_cidrs_v4: splitList(cidrsInput ? cidrsInput.value : '')
+            };
+          });
+        }
+
+        function buildPayload(options = {}) {
+          const strict = options.strict === true;
+          const base = isPlainObject(state.config) ? state.config : {};
+
+          const host = $('proxyHost').value.trim();
+          const portRaw = $('proxyPort').value.trim();
+          const portNumber = Number(portRaw);
+          const portValid = Number.isInteger(portNumber) && portNumber >= 1 && portNumber <= 65535;
+
+          if (strict && !host) throw new Error('代理地址不能为空');
+          if (strict && !portValid) throw new Error('代理端口必须是 1-65535 的整数');
+
+          const fakeIpCidr = $('fakeIpCidr').value.trim();
+          if (strict && !fakeIpCidr) throw new Error('FakeIP CIDR 不能为空');
+
+          const timeout = {
+            connect_ms: Number($('timeoutConnect').value.trim()),
+            send_ms: Number($('timeoutSend').value.trim()),
+            recv_ms: Number($('timeoutRecv').value.trim())
+          };
+          for (const key of Object.keys(timeout)) {
+            if (!Number.isFinite(timeout[key]) || timeout[key] <= 0) {
+              timeout[key] = 5000;
+            }
+            if (strict && (!Number.isInteger(timeout[key]) || timeout[key] < 1 || timeout[key] > 600000)) {
+              throw new Error(`超时 ${key} 必须是 1-600000 的整数`);
+            }
+          }
+
+          const allowedPorts = [];
+          for (const item of splitList($('allowedPorts').value)) {
+            const value = Number(item);
+            if (!Number.isInteger(value) || value < 1 || value > 65535) {
+              if (strict) throw new Error(`允许端口无效：${item}`);
+              continue;
+            }
+            allowedPorts.push(value);
+          }
+
+          const baseRules = isPlainObject(base.proxy_rules) ? base.proxy_rules : {};
+          const baseRouting = isPlainObject(baseRules.routing) ? baseRules.routing : {};
+          const proxyRules = {
+            ...baseRules,
+            allowed_ports: allowedPorts,
+            routing: {
+              ...baseRouting,
+              default_action: $('defaultAction').value === 'direct' ? 'direct' : 'proxy',
+              rules: currentRules()
+            }
+          };
+
+          return {
+            proxy: {
+              host,
+              port: portValid ? portNumber : null,
+              type: $('proxyType').value === 'http' ? 'http' : 'socks5'
+            },
+            fake_ip: {
+              enabled: $('fakeIpEnabled').checked,
+              cidr: fakeIpCidr
+            },
+            timeout,
+            child_injection: $('childInjection').checked,
+            target_processes: base.target_processes,
+            proxy_rules: proxyRules
+          };
+        }
+
+        function syncRawFromForm() {
+          const raw = $('rawConfig');
+          if (document.activeElement === raw) return;
+          try {
+            raw.value = JSON.stringify(buildPayload(), null, 2);
+          } catch {
+            // 预览失败时保持上一次内容，保存时仍会给出明确错误。
+          }
+        }
+
+        function renderProxyForm(config) {
+          state.config = isPlainObject(config) ? config : {};
+          const cfg = state.config;
+          const proxy = isPlainObject(cfg.proxy) ? cfg.proxy : {};
+          const fakeIp = isPlainObject(cfg.fake_ip) ? cfg.fake_ip : {};
+          const timeout = isPlainObject(cfg.timeout) ? cfg.timeout : {};
+
+          $('proxyType').value = proxy.type === 'http' ? 'http' : 'socks5';
+          $('proxyHost').value = proxy.host || '127.0.0.1';
+          $('proxyPort').value = proxy.port === undefined || proxy.port === null ? 7890 : proxy.port;
+          $('childInjection').checked = cfg.child_injection !== false;
+
+          $('fakeIpEnabled').checked = fakeIp.enabled !== false;
+          $('fakeIpCidr').value = fakeIp.cidr || '198.18.0.0/15';
+
+          $('timeoutConnect').value = timeout.connect_ms || 5000;
+          $('timeoutSend').value = timeout.send_ms || 5000;
+          $('timeoutRecv').value = timeout.recv_ms || 5000;
+
+          renderRules(cfg.proxy_rules);
+
+          const allowed = isPlainObject(cfg.proxy_rules) ? cfg.proxy_rules.allowed_ports : null;
+          $('allowedPorts').value = Array.isArray(allowed) ? allowed.join(', ') : '80, 443';
+
+          const routing = isPlainObject(cfg.proxy_rules) && isPlainObject(cfg.proxy_rules.routing) ? cfg.proxy_rules.routing : {};
+          $('defaultAction').value = routing.default_action === 'direct' ? 'direct' : 'proxy';
+
+          syncRawFromForm();
+        }
+
+        function addRule() {
+          const body = $('rulesBody');
+          body.appendChild(
+            createRuleRow({ name: '新规则', enabled: true, action: 'proxy', domains: [], ip_cidrs_v4: [] })
+          );
+          syncRawFromForm();
+          const rows = body.querySelectorAll('tr');
+          const last = rows[rows.length - 1];
+          if (last) {
+            const input = last.querySelector('.rule-name');
+            if (input) input.focus();
+          }
+        }
+
+        function applyJsonToForm() {
+          const raw = $('rawConfig').value;
+          let parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (error) {
+            toast(`JSON 解析失败：${error.message}`, 'err');
+            return;
+          }
+          if (!isPlainObject(parsed)) {
+            toast('JSON 顶层必须是对象', 'err');
+            return;
+          }
+          state.config = { ...(isPlainObject(state.config) ? state.config : {}), ...parsed };
+          renderProxyForm(state.config);
+          toast('已应用 JSON 到表单（尚未保存）', 'ok');
+        }
+
+        function getL10nOptions() {
+          return {
+            l10nMode: $('l10nMode').value || 'auto',
+            allowVersionMismatch: $('allowMismatch').checked
+          };
+        }
+
+        function selectedModules() {
+          return [...document.querySelectorAll('.moduleCheck:checked')].map(input => input.value);
+        }
+
+        function existingCdp() {
+          const capsule = state.status && state.status.capsule;
+          return capsule && isPlainObject(capsule.cdp) ? capsule.cdp : {};
+        }
+
+        /* ----------------------------- 操作 ----------------------------- */
+
+        async function detectPort() {
+          const data = await api('/api/proxy/detect', { method: 'POST', body: {} });
+          if (!data.detected) {
+            toast('未探测到本机代理端口，请手动填写', 'warn');
+            appendLog(['自动探测：未发现可用的本地代理端口。']);
+            return;
+          }
+          const detected = data.detected;
+          $('proxyHost').value = detected.host || '127.0.0.1';
+          $('proxyPort').value = detected.port;
+          $('proxyType').value = detected.type === 'http' ? 'http' : 'socks5';
+          syncRawFromForm();
+          toast(`已探测到本机代理 ${detected.host}:${detected.port}`, 'ok');
+          appendLog([
+            `自动探测：${detected.host}:${detected.port} (${detected.type})，来源 ${detected.source || 'probe'}`
+          ]);
+        }
+
+        function renderTestResults(results) {
+          const box = $('testResults');
+          box.hidden = false;
+          box.textContent = '';
+
+          if (!Array.isArray(results) || results.length === 0) {
+            const note = document.createElement('span');
+            note.className = 'mutedText';
+            note.textContent = '未返回测试结果。';
+            box.appendChild(note);
+            return;
+          }
+
+          for (const result of results) {
+            const pill = document.createElement('span');
+            pill.className = 'resultPill';
+
+            const dot = document.createElement('span');
+            dot.className = `dot ${result.ok ? 'ok' : 'err'}`;
+
+            const name = document.createElement('span');
+            name.className = 'mono';
+            name.textContent = `${result.targetHost}:${result.targetPort}`;
+
+            const label = document.createElement('span');
+            label.textContent = result.ok
+              ? `连通 ${result.latencyMs} ms`
+              : `失败${result.latencyMs ? ` · ${result.latencyMs} ms` : ''}`;
+
+            pill.append(dot, name, label);
+
+            if (!result.ok && result.error) {
+              pill.title = result.error;
+            }
+
+            box.appendChild(pill);
+          }
+        }
+
+        async function testProxy() {
+          const payload = buildPayload();
+          const data = await api('/api/proxy/test', {
+            method: 'POST',
+            body: {
+              host: payload.proxy.host,
+              port: payload.proxy.port,
+              type: payload.proxy.type
+            }
+          });
+
+          const results = Array.isArray(data.results) ? data.results : [];
+          renderTestResults(results);
+
+          appendLog(
+            results.map(
+              result =>
+                `${result.targetHost}:${result.targetPort} → ${result.ok ? '连通' : '失败'} (${result.latencyMs} ms)${
+                  result.error ? ` · ${result.error}` : ''
+                }`
+            )
+          );
+
+          toast(data.ok ? '代理连通性测试全部通过' : '部分目标无法连通，请检查端口与类型', data.ok ? 'ok' : 'warn');
+        }
+
+        async function saveProxy() {
+          const payload = { ...buildPayload({ strict: true }), sync: true };
+          const data = await api('/api/proxy/config', { method: 'POST', body: payload });
+
+          state.config = data.config;
+          renderProxyForm(data.config);
+
+          const lines = [`配置已保存：${data.path}`];
+          for (const dir of data.syncedDirs || []) lines.push(`已同步：${dir}`);
+          for (const item of data.syncErrors || []) {
+            lines.push(`同步失败：${item.dir}（${item.error}）`);
+          }
+          appendLog(lines);
+
+          const failed = (data.syncErrors || []).length;
+          toast(
+            failed > 0 ? `配置已保存，但有 ${failed} 个目录同步失败` : '代理配置已保存并同步到客户端目录',
+            failed > 0 ? 'warn' : 'ok'
+          );
+
+          await refreshStatus();
+        }
+
+        async function checkUpdates() {
+          const data = await api('/api/updates/check', { method: 'POST', body: {} });
+          state.updates = data.updates || {};
+          renderUpdates(state.updates, data.clientVersion);
+
+          const labels = [
+            ['capsule', 'agy-capsule'],
+            ['localization', '中文汉化'],
+            ['proxy', '透明代理']
+          ];
+          const lines = ['已检查上游最新版本：'];
+          for (const [key, label] of labels) {
+            const info = state.updates[key] || {};
+            lines.push(
+              `${label}: ${info.tag || '检查失败'}${info.error ? `（${info.error}）` : ''}`
+            );
+          }
+          appendLog(lines);
+          toast('上游版本检查完成', 'ok');
+        }
+
+        async function runAction(action) {
+          const modules = selectedModules();
+          const l10n = getL10nOptions();
+          const cdpMode = selectedCdpMode();
+          const cdp = existingCdp();
+          const labels = {
+            'dry-run': '演练预览',
+            install: '一键安装',
+            restore: '更新后恢复',
+            uninstall: '一键卸载'
+          };
+
+          if (action !== 'dry-run' && modules.length === 0 && action !== 'restore') {
+            toast('请至少选择一个模块', 'warn');
+            return;
+          }
+
+          const undoCdp =
+            action === 'uninstall' &&
+            modules.includes('capsule') &&
+            (cdpMode === 'native' || cdp.mode === 'native' || cdp.configured === true);
+
+          if (action === 'install' && !window.confirm(`将安装：${modules.join('、')}。继续吗？`)) return;
+          if (action === 'restore' && !window.confirm('将重新应用汉化、代理与 CDP 入口。继续吗？')) return;
+          if (action === 'uninstall') {
+            const extra = undoCdp ? '，并移除 CDP 入口（还原原版 App）' : '';
+            if (!window.confirm(`将卸载：${modules.join('、')}${extra}。官方备份与设置会保留。继续吗？`)) return;
+          }
+
+          let pathname = '';
+          let body = {};
+
+          if (action === 'dry-run' || action === 'install') {
+            pathname = '/api/actions/install';
+            body = { only: modules, dryRun: action === 'dry-run', ...l10n };
+            if (modules.includes('capsule') && cdpMode) body.cdpMode = cdpMode;
+          } else if (action === 'restore') {
+            pathname = '/api/actions/restore';
+            body = { dryRun: false, ...l10n };
+            if (cdpMode) body.cdpMode = cdpMode;
+          } else {
+            pathname = '/api/actions/uninstall';
+            body = { only: modules, dryRun: false };
+            if (undoCdp) body.undoCdp = true;
+          }
+
+          appendLog([`开始${labels[action]}…`]);
+          const data = await api(pathname, { method: 'POST', body });
+
+          if (Array.isArray(data.logs) && data.logs.length > 0) appendLog(data.logs);
+
+          const success = data.ok !== false;
+          toast(
+            success ? `${labels[action]}完成` : `${labels[action]}未完全成功，请查看日志`,
+            success ? 'ok' : 'warn'
+          );
+
+          await refreshStatus();
+        }
+
+        async function launchCdp() {
+          const data = await api('/api/actions/launch', { method: 'POST', body: {} });
+          if (data.ok) {
+            toast('已请求以 CDP 调试模式启动 Antigravity', 'ok');
+          } else {
+            toast('启动未完成，请确认 Antigravity 已安装', 'warn');
+          }
+          if (data.result) appendLog([`CDP 启动：${JSON.stringify(data.result)}`]);
+        }
+
+        async function shutdownPanel() {
+          try {
+            await api('/api/shutdown', { method: 'POST', body: {} });
+          } catch {
+            // 服务器可能在响应完成前关闭连接，这属于预期行为。
+          }
+          state.closed = true;
+          document.body.classList.add('shutdown');
+          document.querySelectorAll('button').forEach(button => {
+            button.disabled = true;
+          });
+          appendLog(['控制面板已关闭，可以直接关闭此页面。']);
+          toast('控制面板已关闭，可关闭此页面', 'ok');
+        }
+
+        /* ----------------------------- 事件绑定 ----------------------------- */
+
+        function wire() {
+          for (const button of document.querySelectorAll('[data-theme-choice]')) {
+            button.addEventListener('click', () => setThemeChoice(button.dataset.themeChoice));
+          }
+
+          $('btnRefresh').addEventListener('click', () =>
+            withBusy(async () => {
+              await refreshStatus({ reloadForm: true });
+              toast('状态已刷新', 'ok');
+            })
+          );
+
+          $('btnUpdates').addEventListener('click', () => withBusy(checkUpdates));
+          $('btnLaunch').addEventListener('click', () => withBusy(launchCdp));
+          $('btnShutdown').addEventListener('click', () => withBusy(shutdownPanel));
+          $('btnDetect').addEventListener('click', () => withBusy(detectPort));
+          $('btnTestProxy').addEventListener('click', () => withBusy(testProxy));
+          $('btnSaveProxy').addEventListener('click', () => withBusy(saveProxy));
+          $('btnAddRule').addEventListener('click', addRule);
+          $('btnApplyJson').addEventListener('click', applyJsonToForm);
+
+          $('cdpMode').addEventListener('change', () => {
+            state.cdpModeTouched = true;
+          });
+
+          $('btnClearLog').addEventListener('click', () => {
+            const view = $('logView');
+            view.textContent = '';
+            view.dataset.empty = '1';
+          });
+
+          for (const button of document.querySelectorAll('.actionBtn')) {
+            button.addEventListener('click', () =>
+              withBusy(() => runAction(button.dataset.action))
+            );
+          }
+
+          const formInputs = document.querySelectorAll('#proxyCard input, #proxyCard select, #proxyCard textarea');
+          for (const input of formInputs) {
+            input.addEventListener('input', syncRawFromForm);
+            input.addEventListener('change', syncRawFromForm);
+          }
+        }
+
+        applyTheme(readThemeChoice());
+        wire();
+        appendLog(['控制面板已就绪，正在读取状态…']);
+
+        refreshStatus({ reloadForm: true }).catch(error => {
+          const message = error && error.message ? error.message : String(error);
+          toast(message, 'err');
+          appendLog([`读取状态失败：${message}`]);
+        });
+      })();
+    </script>
+  </body>
+</html>

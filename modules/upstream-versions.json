@@ -1,0 +1,22 @@
+{
+  "capsule": {
+    "repo": "https://github.com/Lumidarin/agy-capsule",
+    "commit": "0aa1ba4085f0bbf21871968c7c4bca30b4e78790",
+    "license": "MIT"
+  },
+  "localization": {
+    "repo": "https://github.com/antigravity-cn-community/Antigravity-Chinese-Localization",
+    "commit": "409aea1d630150ce756153215b52c12f22e40446",
+    "license": "MIT"
+  },
+  "proxyPosix": {
+    "repo": "https://github.com/xinayida/anti-proxy",
+    "commit": "abdd2ac89f0e8ff732a6e739da0db383a52f3304",
+    "license": "Unspecified"
+  },
+  "proxyWindows": {
+    "repo": "https://github.com/yuaotian/antigravity-proxy",
+    "commit": "ae910aa37beb85681ed8c485137c965b05cf25b1",
+    "license": "BSD-2-Clause"
+  }
+}

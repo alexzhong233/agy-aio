@@ -1,0 +1,77 @@
+{
+  "proxy": {
+    "host": "127.0.0.1",
+    "port": 7897,
+    "type": "socks5"
+  },
+  "fake_ip": {
+    "enabled": true,
+    "cidr": "198.18.0.0/15"
+  },
+  "timeout": {
+    "connect_ms": 5000,
+    "send_ms": 5000,
+    "recv_ms": 5000
+  },
+  "target_processes": [
+    "language_server_macos_arm",
+    "language_server_macos_x64",
+    "language_server",
+    "Antigravity",
+    "Antigravity IDE",
+    "Antigravity Helper",
+    "node",
+    "agy"
+  ],
+  "child_injection": true,
+  "proxy_rules": {
+    "allowed_ports": [
+      80,
+      443
+    ],
+    "dns_mode": "direct",
+    "ipv6_mode": "proxy",
+    "routing": {
+      "default_action": "proxy",
+      "rules": [
+        {
+          "name": "Bypass Localhost",
+          "enabled": true,
+          "action": "direct",
+          "domains": [
+            "localhost",
+            "*.local",
+            "local"
+          ],
+          "ip_cidrs_v4": [
+            "127.0.0.0/8",
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16"
+          ]
+        },
+        {
+          "name": "Bypass Apple & CN",
+          "enabled": true,
+          "action": "direct",
+          "domains": [
+            "*.apple.com",
+            "*.icloud.com",
+            "*.cn"
+          ]
+        },
+        {
+          "name": "Proxy Google Services",
+          "enabled": true,
+          "action": "proxy",
+          "domains": [
+            "*.google.com",
+            "*.googleapis.com",
+            "*.gstatic.com",
+            "*.googleusercontent.com"
+          ]
+        }
+      ]
+    }
+  }
+}

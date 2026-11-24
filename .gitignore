@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Compiled POSIX proxy outputs & objects
+modules/proxy-posix/libantigravity_proxy.dylib
+modules/proxy-posix/libantigravity_proxy.so
+modules/proxy-posix/bin/
+modules/proxy-posix/src/*.o
+modules/proxy-posix/tests/test_client
+
+# Localization runtime / download scratch
+modules/localization/extracted/
+modules/localization/downloads/
+modules/localization/app.asar.ready
+modules/localization/app.asar
+
+# Local caches & coverage
+.cache/
+coverage/
+*.tmp

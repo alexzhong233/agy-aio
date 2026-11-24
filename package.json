@@ -1,0 +1,19 @@
+{
+  "name": "agy-aio",
+  "version": "1.0.0",
+  "description": "Cross-platform all-in-one CLI suite combining agy-capsule, Antigravity Chinese Localization, and no-TUN transparent proxy for macOS, Windows, and Linux.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "bin": {
+    "agy-aio": "./bin/agy-aio.mjs"
+  },
+  "scripts": {
+    "start": "node bin/agy-aio.mjs",
+    "ui": "node bin/agy-aio.mjs ui",
+    "sync-upstream": "node scripts/sync-upstream.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}
