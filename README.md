@@ -203,6 +203,7 @@ Windows 可双击 `ui.bat`，或在命令提示符中运行 `ui.bat`。面板只
 | `agy-aio proxy run` | 在代理注入环境中单次运行命令 | `agy-aio proxy run -- agy --help` |
 | `agy-aio launch` | 以 CDP 调试参数启动 Antigravity，不落盘修改 | `agy-aio launch` |
 | `agy-aio update` | 检查上游 Release 版本；加 `--apply` 时拉取并应用更新 | `agy-aio update`（仅检查）/ `agy-aio update --apply`（拉取并应用） |
+| `agy-aio upgrade` | 校验并安装官方客户端更新（可复用已缓存的安装包），随后恢复已启用的补丁 | `agy-aio upgrade --check` / `agy-aio upgrade` / `agy-aio upgrade --dry-run` |
 | `agy-aio ui` | 启动本地 Web 控制面板，可视化修改代理、分流规则并执行一键维护 | `agy-aio ui --port 8787 --no-open` |
 
 涉及写入的命令通常支持 `--dry-run` 预览。远程下载的汉化包和 Windows DLL 会强制校验 SHA256，校验失败即拒绝安装。
@@ -232,6 +233,21 @@ node bin\agy-aio.mjs restore
 - **macOS 重签**：写入完成后对受影响的 `.app` 统一执行 ad-hoc 重签。
 
 `restore` 会在客户端更新后用新的官方文件刷新汉化备份；`uninstall` 在备份版本与当前客户端不匹配时会拒绝回写以避免白屏。遇到这种情况，请先安装与备份版本匹配的官方客户端，再恢复或重新安装。
+
+## 客户端自升级（`agy-aio upgrade`）
+
+macOS 上 Squirrel.Mac 的应用内自动更新通常会失败：汉化、代理和 CDP 注入需要改写 bundle 后执行 ad-hoc 重签以保留运行所需的 entitlements，而重签会改变 `cdhash`，使运行中的 App 与官方代码要求（code requirement）不再匹配，更新校验因此被拦截。这时改由 CLI 或控制面板在外部接管升级：
+
+```sh
+agy-aio upgrade --check   # 只检查：当前版本、远端最新版本、pending 缓存是否就绪
+agy-aio upgrade           # 校验官方安装包 → 替换 Antigravity.app → 选择性恢复补丁
+```
+
+- 版本信息来自客户端自身的 electron-builder `latest.yml`；安装包按 SHA-512 与大小校验。若 `pending/Antigravity.zip` 已缓存且校验通过，直接复用，无需重新下载。
+- 升级前会停止 Antigravity 并备份当前 App，任一步失败按备份回滚。
+- 替换完成后只对当前已启用的模块做选择性 `restore`（与客户端版本匹配的汉化、代理注入、CDP 入口），不会把已关闭的模块重新装上。`--dry-run` 预览计划，`--no-restore` 跳过恢复，`--force` 在版本比较异常时仍继续。
+
+Web 控制面板提供同样的流程：点击「检查更新」后，顶部更新横幅会显示远端最新版本或待安装缓存；横幅上的「演练升级」/「一键升级客户端」，以及「三合一组件状态与一键维护」操作栏中的「升级客户端」按钮，都对应上述升级命令（演练对应 `--dry-run`）。正式升级前会二次确认，完成后面板自动刷新状态。
 
 ## 仓库维护：同步上游代码
 

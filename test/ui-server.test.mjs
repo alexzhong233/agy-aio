@@ -10,6 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
@@ -23,7 +24,8 @@ const ENV_KEYS = [
   'USERPROFILE',
   'LOCALAPPDATA',
   'AGY_CAPSULE_PLUGINS_DIR',
-  'AGY_AIO_APPLICATIONS_DIR'
+  'AGY_AIO_APPLICATIONS_DIR',
+  'AGY_AIO_UPDATER_CACHE_DIR'
 ];
 
 function makeSandbox() {
@@ -32,7 +34,10 @@ function makeSandbox() {
   const plugins = path.join(root, 'plugins');
   const localAppData = path.join(root, 'localappdata');
   const appsDir = path.join(root, 'Applications');
-  for (const dir of [home, plugins, localAppData, appsDir]) fs.mkdirSync(dir, { recursive: true });
+  const updaterCacheDir = path.join(root, 'updater-cache');
+  for (const dir of [home, plugins, localAppData, appsDir, updaterCacheDir]) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
   const env = {
     ...process.env,
@@ -40,7 +45,8 @@ function makeSandbox() {
     USERPROFILE: home,
     LOCALAPPDATA: localAppData,
     AGY_CAPSULE_PLUGINS_DIR: plugins,
-    AGY_AIO_APPLICATIONS_DIR: appsDir
+    AGY_AIO_APPLICATIONS_DIR: appsDir,
+    AGY_AIO_UPDATER_CACHE_DIR: updaterCacheDir
   };
   // getPlatformInfo() only treats a process as sudo when the *passed* env says so.
   delete env.SUDO_USER;
@@ -68,6 +74,7 @@ function makeSandbox() {
     home,
     plugins,
     appsDir,
+    updaterCacheDir,
     env,
     configPath,
     restore() {
@@ -295,6 +302,9 @@ test('UI server: CSRF/origin/host checks, isolated config save and dry-run insta
     assert.ok(res.text.includes('data-theme-choice="dark"'), 'dark theme choice');
     assert.ok(res.text.includes('id="cdpMode"'), 'cdpMode selector');
     assert.ok(res.text.includes('<details class="adv">'), 'advanced proxy panel is collapsed by default');
+    assert.ok(res.text.includes('id="clientUpdateBanner"'), 'client update banner');
+    assert.ok(res.text.includes('id="btnBannerUpgrade"'), 'banner upgrade button');
+    assert.ok(res.text.includes('id="btnUpgradeClient"'), 'client upgrade button');
   });
 
   await t.test('GET /api/status returns the expected sections', async () => {
@@ -302,7 +312,7 @@ test('UI server: CSRF/origin/host checks, isolated config save and dry-run insta
 
     assert.equal(res.status, 200);
     assert.ok(res.json);
-    for (const key of ['platform', 'capsule', 'localization', 'proxy', 'config']) {
+    for (const key of ['platform', 'capsule', 'localization', 'proxy', 'clientUpdate', 'config']) {
       assert.ok(res.json[key] && typeof res.json[key] === 'object', `status.${key}`);
     }
     assert.equal(res.json.platform.os, process.platform);
@@ -455,5 +465,84 @@ test('UI server: CSRF/origin/host checks, isolated config save and dry-run insta
 
     assert.equal(res.status, 200);
     assert.equal(res.json.ok, true);
+  });
+
+  await t.test('POST /api/actions/upgrade validates cdpMode and allows offline local-package dry-run', async () => {
+    const bogus = await request(server.port, {
+      method: 'POST',
+      path: '/api/actions/upgrade',
+      headers: { 'x-agy-aio-token': csrfToken },
+      body: { cdpMode: 'bogus', dryRun: true }
+    });
+
+    assert.equal(bogus.status, 400);
+    assert.equal(bogus.json.ok, false);
+
+    // A closed loopback port makes fetchClientManifest fail immediately with
+    // ECONNREFUSED, so upgradeClient falls back to the staged pending package.
+    // No external network is contacted and dryRun prevents downloads/writes.
+    const closedPort = await new Promise((resolve, reject) => {
+      const probe = net.createServer();
+      probe.once('error', reject);
+      probe.listen(0, '127.0.0.1', () => {
+        const { port } = probe.address();
+        probe.close(() => resolve(port));
+      });
+    });
+
+    const ymlPath =
+      process.platform === 'darwin'
+        ? path.join(appDir, 'Contents', 'Resources', 'app-update.yml')
+        : path.join(appDir, 'resources', 'app-update.yml');
+    fs.mkdirSync(path.dirname(ymlPath), { recursive: true });
+    fs.writeFileSync(
+      ymlPath,
+      `url: http://127.0.0.1:${closedPort}/manifest/\nprovider: generic\n`,
+      'utf8'
+    );
+
+    const pendingDir = path.join(sandbox.updaterCacheDir, 'pending');
+    fs.mkdirSync(pendingDir, { recursive: true });
+    const zipBytes = Buffer.from('a tiny staged Antigravity package');
+    const digest = crypto.createHash('sha512').update(zipBytes).digest('base64');
+    fs.writeFileSync(path.join(pendingDir, 'Antigravity.zip'), zipBytes);
+    fs.writeFileSync(
+      path.join(pendingDir, 'update-info.json'),
+      `${JSON.stringify({
+        fileName: 'Antigravity.zip',
+        sha512: digest,
+        size: zipBytes.length
+      })}\n`,
+      'utf8'
+    );
+
+    const listFiles = dir => {
+      const out = [];
+      const walk = current => {
+        for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+          const target = path.join(current, entry.name);
+          if (entry.isDirectory()) walk(target);
+          else out.push(path.relative(dir, target));
+        }
+      };
+      walk(dir);
+      return out.sort();
+    };
+    const before = listFiles(appDir);
+
+    const res = await request(server.port, {
+      method: 'POST',
+      path: '/api/actions/upgrade',
+      headers: { 'x-agy-aio-token': csrfToken },
+      body: { cdpMode: 'native', noRestore: true, dryRun: true }
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.json.ok, true);
+    assert.equal(res.json.result.dryRun, true);
+    assert.equal(res.json.result.upgrade.dryRun, true);
+    assert.equal(res.json.result.upgrade.upgraded, false);
+    assert.equal(res.json.result.upgrade.source, 'pending-offline');
+    assert.deepEqual(listFiles(appDir), before);
   });
 });

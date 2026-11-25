@@ -339,6 +339,35 @@
         color: var(--text-muted);
       }
 
+      .banner.info {
+        border-color: var(--accent-border);
+        border-left-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .banner.info strong {
+        color: var(--accent);
+      }
+
+      .banner.withActions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .banner.withActions .bannerBody {
+        flex: 1 1 320px;
+        min-width: 0;
+      }
+
+      .banner.withActions .bannerActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
       /* ---------------- 卡片 ---------------- */
 
       main {
@@ -1199,6 +1228,17 @@
         <p id="versionBannerText"></p>
       </div>
 
+      <div class="banner info withActions" id="clientUpdateBanner" role="status" hidden>
+        <div class="bannerBody">
+          <strong id="clientUpdateTitle"></strong>
+          <p id="clientUpdateText"></p>
+        </div>
+        <div class="bannerActions">
+          <button class="btn secondary sm" id="btnBannerDryUpgrade" type="button">演练升级</button>
+          <button class="btn primary sm" id="btnBannerUpgrade" type="button">一键升级客户端</button>
+        </div>
+      </div>
+
       <details class="card updatesCard" id="updatesCard" hidden>
         <summary>
           <span>上游最新版本</span>
@@ -1424,6 +1464,7 @@
               <button class="btn primary actionBtn" data-action="install" type="button">一键安装</button>
               <button class="btn secondary actionBtn" data-action="restore" type="button">更新后恢复</button>
               <button class="btn danger actionBtn" data-action="uninstall" type="button">一键卸载</button>
+              <button class="btn secondary" id="btnUpgradeClient" type="button">升级客户端</button>
               <button class="btn ghost push" id="btnLaunch" type="button">启动 Antigravity</button>
             </div>
           </div>
@@ -1459,6 +1500,7 @@
           status: null,
           config: null,
           updates: null,
+          clientUpdate: null,
           busy: false,
           closed: false,
           cdpModeTouched: false
@@ -1473,6 +1515,9 @@
           '#btnLaunch',
           '#btnUpdates',
           '#btnRefresh',
+          '#btnUpgradeClient',
+          '#btnBannerDryUpgrade',
+          '#btnBannerUpgrade',
           '.actionBtn'
         ];
 
@@ -1700,6 +1745,45 @@
           }
         }
 
+        function renderClientUpdateBanner(clientUpdate) {
+          const banner = $('clientUpdateBanner');
+          if (!banner) return;
+          const info = isPlainObject(clientUpdate) ? clientUpdate : {};
+          const pending = isPlainObject(info.pendingUpdate) ? info.pendingUpdate : {};
+          const pendingReady = Boolean(pending.exists);
+          const remoteReady = info.updateAvailable === true;
+          if (!pendingReady && !remoteReady) {
+            banner.hidden = true;
+            return;
+          }
+
+          const current = info.clientVersion ? String(info.clientVersion).replace(/^v/i, '') : '';
+          const latest = info.latestVersion ? String(info.latestVersion).replace(/^v/i, '') : '';
+          $('clientUpdateTitle').textContent = latest
+            ? `客户端有新版本 v${latest}${current ? `（当前 v${current}）` : ''}`
+            : '检测到待安装的客户端更新缓存';
+
+          const parts = [];
+          if (info.autoUpdateBlocked) {
+            parts.push(
+              'macOS ad-hoc 重签会拦截应用内自动更新：重签后 cdhash 与官方代码要求不再匹配。可在此直接接管升级，完成后自动恢复已启用的汉化 / 代理 / 胶囊补丁。'
+            );
+          } else {
+            parts.push('可在此直接升级客户端，完成后自动恢复已启用的汉化 / 代理 / 胶囊补丁。');
+          }
+          if (latest) parts.push(`远端最新版本 v${latest}。`);
+          if (pendingReady) {
+            parts.push(
+              `待安装缓存 ${pending.fileName || 'Antigravity.zip'}${
+                info.pendingMatchesLatest ? '（校验匹配远端最新版本）' : ''
+              } 已就绪。`
+            );
+          }
+          if (info.remoteError) parts.push(`远端检查失败：${info.remoteError}`);
+          $('clientUpdateText').textContent = parts.join(' ');
+          banner.hidden = false;
+        }
+
         function selectedCdpMode() {
           const el = $('cdpMode');
           if (!el) return undefined;
@@ -1895,7 +1979,7 @@
           }
         }
 
-        function renderUpdates(updates, clientVersion) {
+        function renderUpdates(updates, clientVersion, clientUpdate) {
           const card = $('updatesCard');
           card.hidden = false;
           card.open = true;
@@ -1905,6 +1989,32 @@
 
           const body = $('updatesBody');
           body.textContent = '';
+
+          const client = isPlainObject(clientUpdate) ? clientUpdate : state.clientUpdate;
+          if (client && client.latestVersion) {
+            const row = document.createElement('div');
+            row.className = 'updateRow';
+
+            const name = document.createElement('span');
+            name.textContent = 'Antigravity 客户端';
+
+            const tag = document.createElement('span');
+            tag.className = 'mono';
+            tag.textContent = `v${String(client.latestVersion).replace(/^v/i, '')}`;
+
+            row.append(name, tag);
+
+            const pending = isPlainObject(client.pendingUpdate) ? client.pendingUpdate : {};
+            if (pending.exists && (client.pendingMatchesLatest || client.updateAvailable !== true)) {
+              row.appendChild(makeBadge('ok', '待安装缓存就绪'));
+            } else if (client.updateAvailable === true) {
+              row.appendChild(makeBadge('warn', '可升级'));
+            } else if (client.updateAvailable === false) {
+              row.appendChild(makeBadge('ok', '已是最新'));
+            }
+
+            body.appendChild(row);
+          }
 
           const groups = [
             ['agy-capsule', updates.capsule],
@@ -1958,7 +2068,11 @@
 
           renderTopbar(data);
           renderModules(data);
-          if (state.updates) renderUpdates(state.updates, (data.localization || {}).clientVersion);
+          state.clientUpdate = data.clientUpdate || state.clientUpdate;
+          renderClientUpdateBanner(state.clientUpdate);
+          if (state.updates) {
+            renderUpdates(state.updates, (data.localization || {}).clientVersion, state.clientUpdate);
+          }
         }
 
         /* ----------------------------- 代理表单 ----------------------------- */
@@ -2327,7 +2441,9 @@
         async function checkUpdates() {
           const data = await api('/api/updates/check', { method: 'POST', body: {} });
           state.updates = data.updates || {};
-          renderUpdates(state.updates, data.clientVersion);
+          state.clientUpdate = data.clientUpdate || state.clientUpdate;
+          renderClientUpdateBanner(state.clientUpdate);
+          renderUpdates(state.updates, data.clientVersion, data.clientUpdate);
 
           const labels = [
             ['capsule', 'agy-capsule'],
@@ -2341,8 +2457,49 @@
               `${label}: ${info.tag || '检查失败'}${info.error ? `（${info.error}）` : ''}`
             );
           }
+
+          const client = state.clientUpdate;
+          if (client && client.clientVersion) {
+            let line = `客户端版本 v${String(client.clientVersion).replace(/^v/i, '')}`;
+            if (client.latestVersion) {
+              line += ` · 远端最新 v${String(client.latestVersion).replace(/^v/i, '')}`;
+            }
+            if (client.updateAvailable === true) line += '（可升级）';
+            else if (client.updateAvailable === false) line += '（已是最新）';
+            if (client.autoUpdateBlocked) line += '（macOS 重签后应用内自动更新被拦截）';
+            lines.push(line);
+          }
+          if (client && client.remoteError) lines.push(`客户端更新检查失败：${client.remoteError}`);
+
           appendLog(lines);
           toast('上游版本检查完成', 'ok');
+        }
+
+        async function runClientUpgrade({ dryRun = false } = {}) {
+          const l10n = getL10nOptions();
+          const cdpMode = selectedCdpMode();
+          const label = dryRun ? '客户端升级演练' : '客户端升级';
+
+          if (!dryRun) {
+            const confirmed = window.confirm(
+              '将用校验通过的官方安装包替换当前 Antigravity.app，并在完成后自动恢复已启用的汉化 / 代理 / 胶囊补丁。继续吗？'
+            );
+            if (!confirmed) return;
+          }
+
+          appendLog([`开始${label}…`]);
+          const data = await api('/api/actions/upgrade', {
+            method: 'POST',
+            body: { dryRun, ...l10n, ...(cdpMode ? { cdpMode } : {}) }
+          });
+
+          if (Array.isArray(data.logs) && data.logs.length > 0) appendLog(data.logs);
+          const success = data.ok !== false;
+          toast(
+            success ? `${label}完成` : `${label}未完全成功，请查看日志`,
+            success ? 'ok' : 'warn'
+          );
+          await refreshStatus();
         }
 
         async function runAction(action) {
@@ -2445,6 +2602,15 @@
           );
 
           $('btnUpdates').addEventListener('click', () => withBusy(checkUpdates));
+          $('btnBannerDryUpgrade').addEventListener('click', () =>
+            withBusy(() => runClientUpgrade({ dryRun: true }))
+          );
+          $('btnBannerUpgrade').addEventListener('click', () =>
+            withBusy(() => runClientUpgrade())
+          );
+          $('btnUpgradeClient').addEventListener('click', () =>
+            withBusy(() => runClientUpgrade())
+          );
           $('btnLaunch').addEventListener('click', () => withBusy(launchCdp));
           $('btnShutdown').addEventListener('click', () => withBusy(shutdownPanel));
           $('btnDetect').addEventListener('click', () => withBusy(detectPort));

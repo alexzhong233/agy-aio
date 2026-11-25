@@ -68,6 +68,17 @@ const UPDATE_OPTIONS = {
   '--apply': { key: 'apply', kind: 'boolean' }
 };
 
+const UPGRADE_OPTIONS = {
+  '--check': { key: 'check', kind: 'boolean' },
+  '--no-restore': { key: 'noRestore', kind: 'boolean' },
+  '--force': { key: 'force', kind: 'boolean' },
+  '--package': { key: 'packagePath', kind: 'path' },
+  '--l10n-mode': { key: 'l10nMode', kind: 'enum', values: ['auto', 'online', 'local'] },
+  '--cdp-mode': { key: 'cdpMode', kind: 'enum', values: ['native', 'wrapper', 'none'] },
+  '--no-cdp': { key: 'noCdp', kind: 'boolean' },
+  '--allow-version-mismatch': { key: 'allowVersionMismatch', kind: 'boolean' }
+};
+
 const UI_OPTIONS = {
   '--port': { key: 'port', kind: 'port' },
   '--no-open': { key: 'noOpen', kind: 'boolean' }
@@ -82,6 +93,7 @@ const COMMANDS = new Set([
   'proxy',
   'launch',
   'update',
+  'upgrade',
   'ui',
   'help'
 ]);
@@ -226,6 +238,7 @@ ${c.bold('命令')}
   ${c.cyan('proxy')}       查看/修改代理配置、测试连通性、构建或代理运行命令
   ${c.cyan('launch')}      以 CDP 调试模式启动 Antigravity
   ${c.cyan('update')}      检查上游更新并按需应用
+  ${c.cyan('upgrade')}     升级官方 Antigravity 客户端并自动恢复已启用补丁
   ${c.cyan('ui')}          启动本地 Web 控制面板（修改代理端口、分流规则与一键维护）
   ${c.cyan('help')}        显示本帮助
 
@@ -266,6 +279,16 @@ ${c.bold('proxy 选项')}
 ${c.bold('update 选项')}
   --apply                 拉取并应用上游更新
 
+${c.bold('upgrade 选项')}
+  --check                 检查官方版本与待安装更新（不修改客户端）
+  --no-restore            升级后不恢复汉化、代理与 CDP 补丁
+  --force                 即使版本未变也强制替换客户端
+  --package <path>        使用本地安装包升级
+  --l10n-mode <mode>      auto | online | local
+  --cdp-mode <mode>       native | wrapper | none
+  --no-cdp                不恢复 CDP 启动器
+  --allow-version-mismatch 允许汉化包与客户端版本不匹配（谨慎使用）
+
 ${c.bold('ui 选项')}
   --port <port>           本地 Web 面板端口（默认自动选择）
   --no-open               启动后不自动打开浏览器
@@ -279,6 +302,8 @@ ${c.bold('示例')}
   agy-aio ui
   agy-aio launch --dry-run
   agy-aio update --apply
+  agy-aio upgrade --check
+  agy-aio upgrade
 `);
 }
 
@@ -312,6 +337,8 @@ function commandOptions(command) {
       return MAINTAIN_OPTIONS;
     case 'update':
       return UPDATE_OPTIONS;
+    case 'upgrade':
+      return UPGRADE_OPTIONS;
     case 'ui':
       return UI_OPTIONS;
     default:
@@ -415,6 +442,12 @@ async function dispatch(command, rest, globalOpts) {
   if (command === 'update') {
     const { runUpdate } = await import('../lib/commands/update.mjs');
     await runUpdate(merged);
+    return;
+  }
+
+  if (command === 'upgrade') {
+    const runUpgrade = await loadHandler('upgrade.mjs', 'runUpgrade');
+    await runUpgrade({ ...merged });
     return;
   }
 
