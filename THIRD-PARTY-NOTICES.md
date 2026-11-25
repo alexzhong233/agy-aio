@@ -10,8 +10,8 @@ are provided to satisfy the attribution requirements of the applicable licenses.
 
 | Project | Commit | License | Material used in `agy-aio` |
 | --- | --- | --- | --- |
-| [Lumidarin/agy-capsule](https://github.com/Lumidarin/agy-capsule) | `0aa1ba4085f0bbf21871968c7c4bca30b4e78790` | MIT | Context/quota/metrics capsule plugin and CDP scripts (`modules/capsule/`) |
-| [antigravity-cn-community/Antigravity-Chinese-Localization](https://github.com/antigravity-cn-community/Antigravity-Chinese-Localization) | `409aea1d630150ce756153215b52c12f22e40446` | MIT | `app.asar` localization payload and DOM localization engine (`modules/localization/`) |
+| [Lumidarin/agy-capsule](https://github.com/Lumidarin/agy-capsule) | `aefb05b938628b14e5773f7b03427fad0b95374e` | MIT | Context/quota/metrics capsule plugin and CDP scripts (`modules/capsule/`) |
+| [antigravity-cn-community/Antigravity-Chinese-Localization](https://github.com/antigravity-cn-community/Antigravity-Chinese-Localization) | `e66b5151cc4e09fb825b1ec0846d720ded7131dc` | MIT | `app.asar` localization payload and DOM localization engine (`modules/localization/`) |
 | [xinayida/anti-proxy](https://github.com/xinayida/anti-proxy) | `abdd2ac89f0e8ff732a6e739da0db383a52f3304` | **Unspecified upstream** (see note) | POSIX socket hook, FakeIP resolver, and Mach-O launcher concepts and code (`modules/proxy-posix/`); embeds `fishhook` (BSD-3-Clause) and `nlohmann/json` (MIT) |
 | [yuaotian/antigravity-proxy](https://github.com/yuaotian/antigravity-proxy) | `ae910aa37beb85681ed8c485137c965b05cf25b1` | BSD-2-Clause | Windows prebuilt `version.dll` / `dbghelp.dll` + `antigravity_proxy.dll` release integration (`modules/proxy-win/` at install time) |
 
@@ -20,7 +20,7 @@ are provided to satisfy the attribution requirements of the applicable licenses.
 ## 1. Lumidarin/agy-capsule
 
 - Repository: https://github.com/Lumidarin/agy-capsule
-- Commit: `0aa1ba4085f0bbf21871968c7c4bca30b4e78790`
+- Commit: `aefb05b938628b14e5773f7b03427fad0b95374e`
 - License: MIT
 - Used for: Antigravity context-window / quota / turn-metrics capsule plugin, sidebar UI
   sidecars, and the CDP (Chrome DevTools Protocol) helper scripts that attach to the
@@ -54,7 +54,7 @@ SOFTWARE.
 ## 2. antigravity-cn-community/Antigravity-Chinese-Localization
 
 - Repository: https://github.com/antigravity-cn-community/Antigravity-Chinese-Localization
-- Commit: `409aea1d630150ce756153215b52c12f22e40446`
+- Commit: `e66b5151cc4e09fb825b1ec0846d720ded7131dc`
 - License: MIT
 - Used for: the prebuilt localized `app.asar` payload (fetched or bundled at install time) and
   the DOM localization engine (dictionary, mutation-observer translator, injection builder,

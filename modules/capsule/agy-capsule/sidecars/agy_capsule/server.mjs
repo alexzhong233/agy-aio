@@ -47,7 +47,7 @@ function conversationDirectories(dataDir) {
 }
 const conversationDirs = conversationDirectories(process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR);
 
-const NO_QUOTA = { quotaGroups: [], cloudPaygo: false };
+const NO_QUOTA = { quotaGroups: [], cloudPaygo: false, hideQuota: false };
 let cachedQuota = null;
 let lastQuotaFetchMs = 0;
 const QUOTA_TTL_MS = 10000;
@@ -78,6 +78,7 @@ async function loadQuota() {
     const res = await request('RetrieveUserQuotaSummary');
     if (!res.ok) return cachedQuota || NO_QUOTA;
     const data = await res.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return cachedQuota || NO_QUOTA;
     const groups = data?.response?.groups ?? data?.groups;
     const quotaGroups = Array.isArray(groups) ? groups : [];
     let cloudPaygo = false;
@@ -90,7 +91,7 @@ async function loadQuota() {
         if (status.ok) cloudPaygo = (await status.json())?.userStatus?.userTier?.id === 'agy-business-paygo-tier';
       } catch {} // Optional detection must not restart the sidecar.
     }
-    cachedQuota = { quotaGroups, cloudPaygo };
+    cachedQuota = { quotaGroups, cloudPaygo, hideQuota: quotaGroups.length === 0 };
     lastQuotaFetchMs = Date.now();
     return cachedQuota;
   } catch {

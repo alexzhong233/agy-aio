@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 import {
   getCapsuleStatus,
   installCapsule,
-  uninstallCapsule
+  uninstallCapsule,
+  updateCapsuleFromUpstream
 } from '../lib/modules/capsule.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -179,4 +180,81 @@ test('uninstallCapsule removes the plugin but preserves user settings', t => {
   });
   assert.equal(status.installed, false);
   assert.equal(status.settingsExists, true);
+});
+
+test('installCapsule preserves a newer installed version unless allowDowngrade is true', t => {
+  const box = makeSandbox(t);
+  const pluginDir = path.join(box.pluginsDir, 'agy-capsule');
+  fs.mkdirSync(pluginDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(pluginDir, 'plugin.json'),
+    JSON.stringify({ name: 'agy-capsule', version: '9.9.9' }),
+    'utf8'
+  );
+
+  const dry = installCapsule({
+    pluginsDir: box.pluginsDir,
+    setupCdp: false,
+    dryRun: true,
+    platformInfo: box.platformInfo,
+    installations: EMPTY_INSTALLATIONS
+  });
+  assert.equal(dry.dryRun, true);
+  assert.equal(dry.preservedNewer, true);
+  assert.equal(dry.keptVersion, '9.9.9');
+  assert.equal(dry.sourceVersion, BUNDLED_VERSION);
+
+  const kept = installCapsule({
+    pluginsDir: box.pluginsDir,
+    setupCdp: false,
+    platformInfo: box.platformInfo,
+    installations: EMPTY_INSTALLATIONS
+  });
+  assert.equal(kept.installed, true);
+  assert.equal(kept.preservedNewer, true);
+  assert.equal(kept.keptVersion, '9.9.9');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(pluginDir, 'plugin.json'), 'utf8')).version, '9.9.9');
+
+  const downgraded = installCapsule({
+    pluginsDir: box.pluginsDir,
+    setupCdp: false,
+    allowDowngrade: true,
+    platformInfo: box.platformInfo,
+    installations: EMPTY_INSTALLATIONS
+  });
+  assert.equal(downgraded.installed, true);
+  assert.equal(downgraded.preservedNewer, undefined);
+  assert.equal(
+    JSON.parse(fs.readFileSync(path.join(pluginDir, 'plugin.json'), 'utf8')).version,
+    BUNDLED_VERSION
+  );
+});
+
+test('updateCapsuleFromUpstream skips download when already at or above release tag', async t => {
+  const box = makeSandbox(t);
+  const pluginDir = path.join(box.pluginsDir, 'agy-capsule');
+  fs.mkdirSync(pluginDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(pluginDir, 'plugin.json'),
+    JSON.stringify({ name: 'agy-capsule', version: '1.5.2' }),
+    'utf8'
+  );
+
+  const result = await updateCapsuleFromUpstream({
+    pluginsDir: box.pluginsDir,
+    setupCdp: false,
+    platformInfo: box.platformInfo,
+    installations: EMPTY_INSTALLATIONS,
+    releaseFetcher: async () => ({
+      tag: 'v1.5.2',
+      tarballUrl: 'http://127.0.0.1:1/should-not-download.tar.gz',
+      zipballUrl: 'http://127.0.0.1:1/should-not-download.zip',
+      assets: []
+    })
+  });
+
+  assert.equal(result.updated, false);
+  assert.equal(result.alreadyLatest, true);
+  assert.equal(result.installed, true);
+  assert.equal(result.currentVersion, '1.5.2');
 });

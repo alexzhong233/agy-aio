@@ -10,6 +10,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 import {
   ensureOfficialBackup,
@@ -25,6 +26,19 @@ const { readAsarPackageVersion } = require('../modules/localization/asar-version
 const { isLocalizedAsar } = require('../modules/localization/auto-restore.js');
 
 const LOCALIZATION_MARKER = '// Antigravity 2.0 Chinese Localization Engine';
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const LOCALIZE_SCRIPT = path.join(REPO_ROOT, 'modules', 'localization', 'localize.js');
+const LOCALIZE_HEAD = fs.readFileSync(LOCALIZE_SCRIPT, 'utf8').slice(0, 4096);
+const BUNDLED_VERSION =
+  /\bCURRENT_VERSION\s*=\s*['"]([^'"]+)['"]/.exec(LOCALIZE_HEAD)?.[1]?.trim() ||
+  /\bRELEASE_VERSION\s*=\s*['"]([^'"]+)['"]/.exec(LOCALIZE_HEAD)?.[1]?.trim() ||
+  JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'modules', 'localization', 'package.json'), 'utf8')
+  ).version;
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 /* ------------------------------------------------------------------ *
  * Fixtures
@@ -342,24 +356,40 @@ test('getLocalizationStatus reports a version mismatch against bundledVersion', 
 
   assert.equal(status.found, true);
   assert.equal(status.clientVersion, '2.99.0');
-  assert.equal(status.bundledVersion, '2.34.0');
+  assert.equal(status.bundledVersion, BUNDLED_VERSION);
   assert.equal(status.versionMatch, 'mismatch');
   assert.match(status.compatibilityMessage, /2\.99\.0/);
-  assert.match(status.compatibilityMessage, /2\.34\.0/);
+  assert.match(status.compatibilityMessage, new RegExp(escapeRegExp(BUNDLED_VERSION)));
   assert.match(status.compatibilityMessage, /白屏/);
 });
 
 test('getLocalizationStatus reports a clean match when the client equals bundledVersion', t => {
   const ws = makeWorkspace(t);
-  fs.writeFileSync(ws.asarPath, buildTestAsar('2.34.0'));
+  fs.writeFileSync(ws.asarPath, buildTestAsar(BUNDLED_VERSION));
 
   const status = getLocalizationStatus({ appDir: ws.appDir, platformInfo: ws.platformInfo });
 
   assert.equal(status.found, true);
-  assert.equal(status.clientVersion, '2.34.0');
-  assert.equal(status.bundledVersion, '2.34.0');
+  assert.equal(status.clientVersion, BUNDLED_VERSION);
+  assert.equal(status.bundledVersion, BUNDLED_VERSION);
   assert.equal(status.versionMatch, 'match');
   assert.match(status.compatibilityMessage, /精确匹配/);
+});
+
+test('getLocalizationStatus reports match when client is already localized even if newer than bundledVersion', t => {
+  const ws = makeWorkspace(t);
+  fs.writeFileSync(ws.asarPath, buildTestAsar('2.99.0', LOCALIZATION_MARKER));
+
+  const status = getLocalizationStatus({ appDir: ws.appDir, platformInfo: ws.platformInfo });
+
+  assert.equal(status.found, true);
+  assert.equal(status.localized, true);
+  assert.equal(status.clientVersion, '2.99.0');
+  assert.equal(status.bundledVersion, BUNDLED_VERSION);
+  assert.equal(status.bundledVersionMatch, 'mismatch');
+  assert.equal(status.versionMatch, 'match');
+  assert.match(status.compatibilityMessage, /已完成汉化/);
+  assert.doesNotMatch(status.compatibilityMessage, /白屏/);
 });
 
 /* ------------------------------------------------------------------ *
@@ -471,7 +501,7 @@ test('installLocalization auto refuses local fallback when the online patch mism
     error => {
       assert.match(error.message, /已拒绝自动回退本地重建以防白屏/);
       assert.match(error.message, /2\.99\.0/);
-      assert.match(error.message, /2\.34\.0/);
+      assert.match(error.message, new RegExp(escapeRegExp(BUNDLED_VERSION)));
       assert.match(error.message, /--allow-version-mismatch/);
       return true;
     }
@@ -499,7 +529,7 @@ test('installLocalization auto refuses local fallback when the release lookup fa
     error => {
       assert.match(error.message, /已拒绝回退本地重建以防白屏/);
       assert.match(error.message, /2\.99\.0/);
-      assert.match(error.message, /2\.34\.0/);
+      assert.match(error.message, new RegExp(escapeRegExp(BUNDLED_VERSION)));
       assert.match(error.message, /--allow-version-mismatch/);
       return true;
     }

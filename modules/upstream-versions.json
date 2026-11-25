@@ -1,12 +1,12 @@
 {
   "capsule": {
     "repo": "https://github.com/Lumidarin/agy-capsule",
-    "commit": "0aa1ba4085f0bbf21871968c7c4bca30b4e78790",
+    "commit": "aefb05b938628b14e5773f7b03427fad0b95374e",
     "license": "MIT"
   },
   "localization": {
     "repo": "https://github.com/antigravity-cn-community/Antigravity-Chinese-Localization",
-    "commit": "409aea1d630150ce756153215b52c12f22e40446",
+    "commit": "e66b5151cc4e09fb825b1ec0846d720ded7131dc",
     "license": "MIT"
   },
   "proxyPosix": {
